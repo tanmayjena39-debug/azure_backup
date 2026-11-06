@@ -1,0 +1,362 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "storageAccounts_dbstoragespdz4g367amc6_name": {
+            "defaultValue": "dbstoragespdz4g367amc6",
+            "type": "String"
+        },
+        "userAssignedIdentities_dbmanagedidentity_name": {
+            "defaultValue": "dbmanagedidentity",
+            "type": "String"
+        },
+        "accessConnectors_unity_catalog_access_connector_name": {
+            "defaultValue": "unity-catalog-access-connector",
+            "type": "String"
+        },
+        "systemTopics_dbstoragespdz4g367amc6_e11ab639_7881_4b12_b91b_0402cd3d1eed_name": {
+            "defaultValue": "dbstoragespdz4g367amc6-e11ab639-7881-4b12-b91b-0402cd3d1eed",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Databricks/accessConnectors",
+            "apiVersion": "2026-01-01",
+            "name": "[parameters('accessConnectors_unity_catalog_access_connector_name')]",
+            "location": "eastus",
+            "tags": {
+                "application": "databricks",
+                "databricks-environment": "true",
+                "owner": "Tanmay Jena"
+            },
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {}
+        },
+        {
+            "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+            "apiVersion": "2025-05-31-preview",
+            "name": "[parameters('userAssignedIdentities_dbmanagedidentity_name')]",
+            "location": "eastus",
+            "tags": {
+                "application": "databricks",
+                "databricks-environment": "true",
+                "owner": "Tanmay Jena"
+            },
+            "properties": {
+                "isolationScope": "None",
+                "assignmentRestrictions": {
+                    "providers": []
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2026-06-01",
+            "name": "[parameters('storageAccounts_dbstoragespdz4g367amc6_name')]",
+            "location": "eastus",
+            "tags": {
+                "application": "databricks",
+                "databricks-environment": "true",
+                "owner": "Tanmay Jena"
+            },
+            "sku": {
+                "name": "Standard_ZRS",
+                "tier": "Standard"
+            },
+            "kind": "StorageV2",
+            "properties": {
+                "allowCrossTenantDelegationSas": false,
+                "defaultToOAuthAuthentication": false,
+                "allowCrossTenantReplication": false,
+                "minimumTlsVersion": "TLS1_2",
+                "allowBlobPublicAccess": false,
+                "allowSharedKeyAccess": true,
+                "isHnsEnabled": true,
+                "networkAcls": {
+                    "ipv6Rules": [],
+                    "bypass": "AzureServices",
+                    "virtualNetworkRules": [],
+                    "ipRules": [],
+                    "defaultAction": "Allow"
+                },
+                "supportsHttpsTrafficOnly": true,
+                "encryption": {
+                    "services": {
+                        "file": {
+                            "keyType": "Account",
+                            "enabled": true
+                        },
+                        "blob": {
+                            "keyType": "Account",
+                            "enabled": true
+                        }
+                    },
+                    "keySource": "Microsoft.Storage"
+                },
+                "accessTier": "Hot"
+            }
+        },
+        {
+            "type": "Microsoft.EventGrid/systemTopics",
+            "apiVersion": "2025-07-15-preview",
+            "name": "[parameters('systemTopics_dbstoragespdz4g367amc6_e11ab639_7881_4b12_b91b_0402cd3d1eed_name')]",
+            "location": "eastus",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_dbstoragespdz4g367amc6_name'))]"
+            ],
+            "properties": {
+                "source": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_dbstoragespdz4g367amc6_name'))]",
+                "topicType": "microsoft.storage.storageaccounts"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices",
+            "apiVersion": "2026-06-01",
+            "name": "[concat(parameters('storageAccounts_dbstoragespdz4g367amc6_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_dbstoragespdz4g367amc6_name'))]"
+            ],
+            "sku": {
+                "name": "Standard_ZRS",
+                "tier": "Standard"
+            },
+            "properties": {
+                "staticWebsite": {
+                    "enabled": false
+                },
+                "cors": {
+                    "corsRules": []
+                },
+                "deleteRetentionPolicy": {
+                    "allowPermanentDelete": false,
+                    "enabled": false
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/fileServices",
+            "apiVersion": "2026-06-01",
+            "name": "[concat(parameters('storageAccounts_dbstoragespdz4g367amc6_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_dbstoragespdz4g367amc6_name'))]"
+            ],
+            "sku": {
+                "name": "Standard_ZRS",
+                "tier": "Standard"
+            },
+            "properties": {
+                "protocolSettings": {
+                    "smb": {}
+                },
+                "cors": {
+                    "corsRules": []
+                },
+                "shareDeleteRetentionPolicy": {
+                    "enabled": true,
+                    "days": 7
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/queueServices",
+            "apiVersion": "2026-06-01",
+            "name": "[concat(parameters('storageAccounts_dbstoragespdz4g367amc6_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_dbstoragespdz4g367amc6_name'))]"
+            ],
+            "properties": {
+                "cors": {
+                    "corsRules": []
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/tableServices",
+            "apiVersion": "2026-06-01",
+            "name": "[concat(parameters('storageAccounts_dbstoragespdz4g367amc6_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_dbstoragespdz4g367amc6_name'))]"
+            ],
+            "properties": {
+                "cors": {
+                    "corsRules": []
+                }
+            }
+        },
+        {
+            "type": "Microsoft.EventGrid/systemTopics/eventSubscriptions",
+            "apiVersion": "2025-07-15-preview",
+            "name": "[concat(parameters('systemTopics_dbstoragespdz4g367amc6_e11ab639_7881_4b12_b91b_0402cd3d1eed_name'), '/csms-subscription-f0e7718e-a015-4e85-85b3-e1461c78b913')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.EventGrid/systemTopics', parameters('systemTopics_dbstoragespdz4g367amc6_e11ab639_7881_4b12_b91b_0402cd3d1eed_name'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_dbstoragespdz4g367amc6_name'))]"
+            ],
+            "properties": {
+                "destination": {
+                    "properties": {
+                        "resourceId": "[concat(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_dbstoragespdz4g367amc6_name')), '/')]",
+                        "queueName": "csms-queue-f0e7718e-a015-4e85-85b3-e1461c78b913"
+                    },
+                    "endpointType": "StorageQueue"
+                },
+                "filter": {
+                    "subjectBeginsWith": "/blobServices/default/containers/unity-catalog-storage/blobs/7405604721927961/",
+                    "includedEventTypes": [
+                        "Microsoft.Storage.BlobCreated",
+                        "Microsoft.Storage.BlobRenamed",
+                        "Microsoft.Storage.DirectoryRenamed",
+                        "Microsoft.Storage.DirectoryDeleted",
+                        "Microsoft.Storage.BlobDeleted"
+                    ],
+                    "advancedFilters": [
+                        {
+                            "values": [
+                                "CopyBlob",
+                                "PutBlob",
+                                "PutBlockList",
+                                "FlushWithClose",
+                                "SftpCommit",
+                                "RenameFile",
+                                "RenameDirectory",
+                                "SftpRename",
+                                "DeleteDirectory",
+                                "SftpRemoveDir",
+                                "DeleteBlob",
+                                "DeleteFile",
+                                "SftpRemove"
+                            ],
+                            "operatorType": "StringContains",
+                            "key": "data.api"
+                        }
+                    ]
+                },
+                "labels": [
+                    "{\"vendor\":\"databricks\",\"service\":\"unity-catalog\",\"description\":\"File event monitoring for storage account: dbstoragespdz4g367amc6 - container: unity-catalog-storage - pathPrefix: 7405604721927961/\"}"
+                ],
+                "eventDeliverySchema": "EventGridSchema",
+                "retryPolicy": {
+                    "maxDeliveryAttempts": 30,
+                    "eventTimeToLiveInMinutes": 1440
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+            "apiVersion": "2026-06-01",
+            "name": "[concat(parameters('storageAccounts_dbstoragespdz4g367amc6_name'), '/default/ephemeral')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccounts_dbstoragespdz4g367amc6_name'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_dbstoragespdz4g367amc6_name'))]"
+            ],
+            "properties": {
+                "immutableStorageWithVersioning": {
+                    "enabled": false
+                },
+                "defaultEncryptionScope": "$account-encryption-key",
+                "denyEncryptionScopeOverride": false,
+                "publicAccess": "None"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+            "apiVersion": "2026-06-01",
+            "name": "[concat(parameters('storageAccounts_dbstoragespdz4g367amc6_name'), '/default/jobs')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccounts_dbstoragespdz4g367amc6_name'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_dbstoragespdz4g367amc6_name'))]"
+            ],
+            "properties": {
+                "immutableStorageWithVersioning": {
+                    "enabled": false
+                },
+                "defaultEncryptionScope": "$account-encryption-key",
+                "denyEncryptionScopeOverride": false,
+                "publicAccess": "None"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+            "apiVersion": "2026-06-01",
+            "name": "[concat(parameters('storageAccounts_dbstoragespdz4g367amc6_name'), '/default/logs')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccounts_dbstoragespdz4g367amc6_name'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_dbstoragespdz4g367amc6_name'))]"
+            ],
+            "properties": {
+                "immutableStorageWithVersioning": {
+                    "enabled": false
+                },
+                "defaultEncryptionScope": "$account-encryption-key",
+                "denyEncryptionScopeOverride": false,
+                "publicAccess": "None"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+            "apiVersion": "2026-06-01",
+            "name": "[concat(parameters('storageAccounts_dbstoragespdz4g367amc6_name'), '/default/meta')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccounts_dbstoragespdz4g367amc6_name'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_dbstoragespdz4g367amc6_name'))]"
+            ],
+            "properties": {
+                "immutableStorageWithVersioning": {
+                    "enabled": false
+                },
+                "defaultEncryptionScope": "$account-encryption-key",
+                "denyEncryptionScopeOverride": false,
+                "publicAccess": "None"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+            "apiVersion": "2026-06-01",
+            "name": "[concat(parameters('storageAccounts_dbstoragespdz4g367amc6_name'), '/default/root')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccounts_dbstoragespdz4g367amc6_name'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_dbstoragespdz4g367amc6_name'))]"
+            ],
+            "properties": {
+                "immutableStorageWithVersioning": {
+                    "enabled": false
+                },
+                "defaultEncryptionScope": "$account-encryption-key",
+                "denyEncryptionScopeOverride": false,
+                "publicAccess": "None"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+            "apiVersion": "2026-06-01",
+            "name": "[concat(parameters('storageAccounts_dbstoragespdz4g367amc6_name'), '/default/unity-catalog-storage')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccounts_dbstoragespdz4g367amc6_name'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_dbstoragespdz4g367amc6_name'))]"
+            ],
+            "properties": {
+                "immutableStorageWithVersioning": {
+                    "enabled": false
+                },
+                "defaultEncryptionScope": "$account-encryption-key",
+                "denyEncryptionScopeOverride": false,
+                "publicAccess": "None"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/queueServices/queues",
+            "apiVersion": "2026-06-01",
+            "name": "[concat(parameters('storageAccounts_dbstoragespdz4g367amc6_name'), '/default/csms-queue-f0e7718e-a015-4e85-85b3-e1461c78b913')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/queueServices', parameters('storageAccounts_dbstoragespdz4g367amc6_name'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_dbstoragespdz4g367amc6_name'))]"
+            ],
+            "properties": {
+                "metadata": {}
+            }
+        }
+    ]
+}
